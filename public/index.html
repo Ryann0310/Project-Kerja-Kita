@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KerjaKita – Job Board</title>
+
+  <style>
+    /* ===== Variabel warna ===== */
+    :root {
+      --bg: #eef2ef;   /* latar halaman */
+      --sf: #fff;      /* permukaan: kartu, header, input */
+      --tx: #10241d;   /* teks utama */
+      --mu: #5d6f68;   /* teks sekunder */
+      --bd: #d5ded9;   /* garis tepi */
+      --pr: #0e6b50;   /* warna utama */
+      --pt: #fff;      /* teks di atas warna utama */
+      --ok: #0e7a4f;   /* sukses */
+      --wn: #a15c07;   /* peringatan */
+      --er: #b3261e;   /* galat */
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0c1713;
+        --sf: #13221c;
+        --tx: #e6f0eb;
+        --mu: #8fa69c;
+        --bd: #24382f;
+        --pr: #4fd1a1;
+        --pt: #06130e;
+        --ok: #4fd1a1;
+        --wn: #f0b45c;
+        --er: #ff8a80;
+      }
+    }
+
+    /* ===== Dasar ===== */
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--tx);
+    }
+
+    h1, h2, h3 { margin: .2em 0; }
+
+    a {
+      color: var(--pr);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    main {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+   /* Footer KerjaKita */
+footer.site-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 25px 16px;
+  font-size: 13px;
+  background: #F7F7F2;
+  color: #183F35;
+  border-top: 1px solid #E3E7E2;
+}
+
+/* Logo pada footer */
+.footer-logo {
+  display: block;
+  width: 150px;
+  height: auto;
+  object-fit: contain;
+}
+
+    /* ===== Header ===== */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--sf);
+      border-bottom: 1px solid var(--bd);
+    }
+
+    .logo {
+      margin-left: auto;   /* dorong logo ke pojok kanan */
+      height: 40px;
+      cursor: pointer;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .logo {
+        padding: 4px 10px;
+        border-radius: 8px;
+        background: #fff;  /* agar logo hijau gelap tetap terlihat di mode gelap */
+      }
+    }
+
+    /* ===== Tombol & formulir ===== */
+    button {
+      font: inherit;
+      padding: 7px 13px;
+      border: 1px solid var(--bd);
+      border-radius: 6px;
+      background: var(--sf);
+      color: var(--tx);
+      cursor: pointer;
+    }
+
+    button.pr {
+      background: var(--pr);
+      color: var(--pt);
+      border-color: var(--pr);
+      font-weight: 600;
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: default;
+    }
+
+    input, select, textarea {
+      font: inherit;
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--bd);
+      border-radius: 6px;
+      background: var(--sf);
+      color: var(--tx);
+    }
+
+    label {
+      display: block;
+      margin: 0 0 10px;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    label > * {
+      margin-top: 4px;
+      font-weight: 400;
+    }
+
+    /* ===== Hero & pencarian ===== */
+    .hero {
+      margin-bottom: 14px;
+      padding: 40px 24px;
+      border-radius: 16px 16px 4px 16px;
+      color: #fff;
+      /* lapisan hijau gelap di atas foto agar teks tetap terbaca */
+      background:
+        linear-gradient(rgba(8, 56, 42, .82), rgba(8, 56, 42, .82)),
+        url("hero.jpg") center / cover no-repeat,
+        var(--pr);
+    }
+
+    .hero h1 {
+      font-size: clamp(26px, 5vw, 40px);
+      line-height: 1.1;
+    }
+
+    .hero p {
+      margin: 6px 0 0;
+      opacity: .9;
+    }
+
+    .bar {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .bar * { border: 0; }
+
+    /* ===== Kartu & daftar ===== */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      margin-bottom: 12px;
+      padding: 14px;
+      border: 1px solid var(--bd);
+      border-radius: 10px;
+      background: var(--sf);
+    }
+
+    .grid .card { margin: 0; }
+
+    .h { cursor: pointer; }
+    .h:hover { border-color: var(--pr); }
+
+    .tag {
+      display: inline-block;
+      margin: 2px 4px 2px 0;
+      padding: 1px 9px;
+      font-size: 12px;
+      border: 1px solid var(--bd);
+      border-radius: 99px;
+      background: var(--bg);
+    }
+
+    .msg {
+      padding: 8px 12px;
+      border-left: 4px solid var(--pr);
+      border-radius: 4px;
+      background: var(--sf);
+    }
+
+    /* ===== Dashboard ===== */
+    .dash {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 16px;
+    }
+
+    nav button {
+      display: block;
+      width: 100%;
+      margin-bottom: 6px;
+      text-align: left;
+    }
+
+    nav .on {
+      background: var(--pr);
+      color: var(--pt);
+      border-color: var(--pr);
+    }
+
+    /* ===== Tabel ===== */
+    .tw { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid var(--bd);
+    }
+
+    /* ===== Indikator tahap seleksi ===== */
+    .st {
+      display: flex;
+      gap: 6px;
+      margin: 8px 0;
+    }
+
+    .st i {
+      flex: 1;
+      padding: 5px 2px;
+      font-style: normal;
+      font-size: 12px;
+      text-align: center;
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--mu);
+    }
+
+    .st i.on { background: var(--pr); color: var(--pt); }
+    .st i.x  { background: var(--er); color: #fff; }
+
+    /* ===== Utilitas ===== */
+    .mu { color: var(--mu); }
+    .ok { color: var(--ok); }
+    .wn { color: var(--wn); }
+    .er { color: var(--er); }
+    .pl { white-space: pre-line; }
+
+    /* ===== Layar kecil ===== */
+    @media (max-width: 700px) {
+      .bar, .dash { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app"></div>
+  <script src="app.js"></script>
+</body>
+</html>
