@@ -1,7 +1,18 @@
 const express=require('express'),Database=require('better-sqlite3'),bcrypt=require('bcryptjs'),jwt=require('jsonwebtoken');
-const SECRET=process.env.JWT_SECRET||'ganti-rahasia-ini',db=new Database('kerjakita.db');
+const fs=require('fs'),path=require('path');
+const SECRET=process.env.JWT_SECRET||'ganti-rahasia-ini';
+
+// ---- Lokasi data: di Vercel hanya /tmp yang bisa ditulis
+const ON_VERCEL=!!process.env.VERCEL;
+const DATA_DIR=ON_VERCEL?'/tmp':__dirname;
+const DB_SRC=path.join(__dirname,'kerjakita.db'),DB_FILE=path.join(DATA_DIR,'kerjakita.db');
+if(ON_VERCEL&&!fs.existsSync(DB_FILE)){
+ try{fs.copyFileSync(DB_SRC,DB_FILE)}catch(e){console.log('DB awal tidak ditemukan, membuat baru:',e.message)}
+}
+const db=new Database(DB_FILE);
+const CVDIR=path.join(DATA_DIR,'uploads','cv');fs.mkdirSync(CVDIR,{recursive:true});
+
 const LOCS=['Semarang','Jakarta','Bandung','Surabaya','Yogyakarta','Remote'],TYPES=['Full-time','Part-time','Kontrak','Magang','Freelance'],STATUS=['Dikirim','Ditinjau','Wawancara','Diterima','Ditolak'];
-const fs=require('fs'),path=require('path'),CVDIR=path.join(__dirname,'uploads','cv');fs.mkdirSync(CVDIR,{recursive:true});
 db.pragma('foreign_keys=ON');
 db.exec(`CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,name TEXT,email TEXT UNIQUE,pass TEXT,role TEXT,blocked INT DEFAULT 0,phone TEXT DEFAULT '',loc TEXT DEFAULT '',about TEXT DEFAULT '',cv TEXT DEFAULT '{}');
 CREATE TABLE IF NOT EXISTS companies(id INTEGER PRIMARY KEY,user_id INT UNIQUE REFERENCES users(id) ON DELETE CASCADE,name TEXT,industry TEXT DEFAULT '',loc TEXT DEFAULT '',web TEXT DEFAULT '',about TEXT DEFAULT '',verified INT DEFAULT 0);
@@ -21,7 +32,9 @@ if(!one('SELECT 1 FROM users')){
  [['Web Developer','Teknologi','Semarang','Full-time','Rp6–9 juta'],['UI/UX Designer','Desain','Remote','Kontrak','Rp5–8 juta'],['Magang Data Analyst','Teknologi','Semarang','Magang','Rp1,5 juta']]
   .forEach(j=>run("INSERT INTO jobs(company_id,title,category,location,type,salary,descr,req,status) VALUES(1,?,?,?,?,?,?,?,'approved')",...j,'Mengerjakan proyek nyata bersama tim.','Minimal D3/S1 terkait.\nMampu bekerja dalam tim.'));
 }
-const app=express();app.use(express.json(),express.static('public'));app.use('/api/me/cv',express.raw({type:'application/pdf',limit:'5mb'}));
+const app=express();app.use(express.json(),express.static(path.join(__dirname,'public')));
+// Batas 4 MB karena Vercel membatasi ukuran request function sekitar 4,5 MB
+app.use('/api/me/cv',express.raw({type:'application/pdf',limit:'4mb'}));
 const auth=role=>(req,res,next)=>{try{const t=jwt.verify((req.headers.authorization||'').slice(7),SECRET),u=one('SELECT * FROM users WHERE id=?',t.id);
  if(!u||u.blocked)throw 0;if(role!='any'&&u.role!=role)return res.status(403).json({error:'Akses ditolak'});req.user=u;next()}catch{res.status(401).json({error:'Silakan masuk terlebih dahulu'})}};
 const A=(m,p,role,fn)=>app[m](p,...(role?[auth(role)]:[]),(req,res)=>{try{res.json(fn(req))}catch(e){res.status(e.code||400).json({error:e.message})}});
@@ -51,7 +64,7 @@ A('put','/api/me','pelamar',r=>{const b=r.body;run('UPDATE users SET name=?,phon
 // CV berupa file PDF (disimpan di folder uploads/cv, tidak publik)
 A('put','/api/me/cv','pelamar',r=>{const f=r.body;
  if(!Buffer.isBuffer(f)||!f.length)fail('Pilih file PDF CV terlebih dahulu');
- if(f.length>5*1024*1024)fail('Ukuran CV maksimal 5 MB');
+ if(f.length>4*1024*1024)fail('Ukuran CV maksimal 4 MB');
  if(f.subarray(0,5).toString('latin1')!=='%PDF-')fail('File harus berformat PDF');
  let name='cv.pdf';try{name=path.basename(decodeURIComponent(r.headers['x-filename']||'cv.pdf')).slice(0,100)||'cv.pdf'}catch{}
  fs.writeFileSync(path.join(CVDIR,r.user.id+'.pdf'),f);
@@ -93,4 +106,10 @@ A('delete','/api/admin/companies/:id','admin',r=>(run('DELETE FROM users WHERE i
 A('get','/api/admin/jobs','admin',()=>all(JC+"ORDER BY (j.status='pending') DESC,j.id DESC"));
 A('put','/api/admin/jobs/:id/status','admin',r=>{if(!['approved','rejected','pending'].includes(r.body.status))fail('Status tidak valid');run('UPDATE jobs SET status=? WHERE id=?',r.body.status,r.params.id);return ok()});
 A('delete','/api/admin/jobs/:id','admin',r=>(run('DELETE FROM jobs WHERE id=?',r.params.id),ok()));
-const PORT=process.env.PORT||3000;app.listen(PORT,()=>console.log('KerjaKita berjalan di http://localhost:'+PORT));
+
+// ---- Jalankan: lokal pakai listen, di Vercel cukup diekspor
+if(!ON_VERCEL){
+ const PORT=process.env.PORT||3000;
+ app.listen(PORT,()=>console.log('KerjaKita berjalan di http://localhost:'+PORT));
+}
+module.exports=app;
